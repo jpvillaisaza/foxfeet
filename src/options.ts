@@ -28,10 +28,9 @@ export const parseOptions = (args: string[]): Result<Options> => {
       },
     },
   });
-  const url = positionals[0];
-  if (!url) {
-    return { ok: false, error: "" };
+  if (positionals.length === 1) {
+    return { ok: true, value: { ...values, url: positionals[0] } };
   } else {
-    return { ok: true, value: { ...values, url } };
+    return { ok: false, error: "" };
   }
 }
