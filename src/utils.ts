@@ -1,9 +1,13 @@
+export type Result<T> =
+  | { ok: true; value: T; }
+  | { ok: false; error: string; }
+
 export const fetchWithUserAgent = (
   resource: string | URL | Request,
 ): Promise<Response> =>
   fetch(resource, {
     "headers": {
-      "User-Agent": "hermes/1.0.0",
+      "User-Agent": "foxfeet/1.0.0",
     },
   });
 
