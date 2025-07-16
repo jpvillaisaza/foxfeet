@@ -19,7 +19,7 @@ describe('fetchWithUserAgent', { concurrency: true }, () => {
       .intercept({
         headers: (headers) => {
           for (const [key, value] of Object.entries(headers)) {
-            if (key === "user-agent" && value === "hermes/1.0.0") {
+            if (key === "user-agent" && value === "foxfeet/1.0.0") {
               return true;
             }
           }

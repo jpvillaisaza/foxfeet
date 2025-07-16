@@ -7,7 +7,7 @@ export const fetchWithUserAgent = (
 ): Promise<Response> =>
   fetch(resource, {
     "headers": {
-      "User-Agent": "hermes/1.0.0",
+      "User-Agent": "foxfeet/1.0.0",
     },
   });
 

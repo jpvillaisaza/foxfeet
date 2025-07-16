@@ -7,7 +7,7 @@ const main = async () => {
   const options = parseOptions(process.argv.slice(2));
   if (!options.ok) {
     console.error(options.error);
-    console.error('Usage: hermes URL');
+    console.error('Usage: foxfeet URL');
     process.exit(1);
   }
   run(options.value);
