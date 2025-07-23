@@ -9,6 +9,12 @@ describe('parseOptions', () => {
     assert.strictEqual(options.error, '');
   });
 
+  it('no URL but help', () => {
+    const options = parseOptions(['--help']);
+    assert.strictEqual(options.ok, true);
+    assert.strictEqual(options.value.help, true);
+  });
+
   it ('URL', () => {
     const url = 'https://www.example.com/';
     const options = parseOptions([url]);
