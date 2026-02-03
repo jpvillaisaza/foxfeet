@@ -1,5 +1,3 @@
 module Main (main) where
 
-main :: IO ()
-main =
-  pure ()
+import Foxfeet (main)

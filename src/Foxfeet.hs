@@ -1,1 +1,5 @@
-module Foxfeet where
+module Foxfeet (main) where
+
+main :: IO ()
+main =
+  pure ()
