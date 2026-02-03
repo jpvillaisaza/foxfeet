@@ -13,6 +13,11 @@ library
   exposed-modules: Foxfeet
   build-depends:
     , base >= 4.18.3.0 && < 4.19
+    , bytestring
+    , http-client
+    , http-client-tls
+    , tagsoup
+    , text
 
 executable foxfeet
   import: common
