@@ -10,12 +10,20 @@ common common
 library
   import: common
   hs-source-dirs: src
-  exposed-modules: Foxfeet
+  exposed-modules:
+    Foxfeet
+    Foxfeet.Opt
+  other-modules:
+    Paths_foxfeet
+  autogen-modules:
+    Paths_foxfeet
   build-depends:
+    , aeson
     , base >= 4.18.3.0 && < 4.19
     , bytestring
     , http-client
     , http-client-tls
+    , optparse-applicative
     , tagsoup
     , text
 
