@@ -5,13 +5,14 @@ module Foxfeet.Opt
 
 import Data.Foldable (fold)
 import Data.Version (showVersion)
+import Network.URI
 import Options.Applicative
 import Paths_foxfeet (version)
 
 data Opt = Opt
   { optCheck :: Bool
   , optGuess :: Bool
-  , optUrl :: String
+  , optUrl :: URI
   }
 
 opt :: Parser Opt
@@ -41,11 +42,11 @@ guess =
   in
     switch (fold mods)
 
-pUrl :: Parser String
+pUrl :: Parser URI
 pUrl =
   pUrl1 <|> pUrl2
 
-pUrl1 :: Parser String
+pUrl1 :: Parser URI
 pUrl1 =
   let
     mods =
@@ -54,9 +55,9 @@ pUrl1 =
       , help mempty
       ]
   in
-    strOption (fold mods)
+    option (maybeReader parseURI) (fold mods)
 
-pUrl2 :: Parser String
+pUrl2 :: Parser URI
 pUrl2 =
   let
     mods =
@@ -64,7 +65,7 @@ pUrl2 =
       , help mempty
       ]
   in
-    argument str (fold mods)
+    argument (maybeReader parseURI) (fold mods)
 
 opts :: ParserInfo Opt
 opts =

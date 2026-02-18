@@ -5,6 +5,7 @@ import Data.Aeson (Value (..), decode)
 import qualified Data.Aeson.KeyMap as KeyMap
 import Data.Foldable (traverse_)
 import Data.List (find)
+import Data.Maybe (mapMaybe)
 import Data.String (fromString)
 import qualified Data.Text as Text
 import Data.Text.Lazy (Text, pack, unpack)
@@ -13,6 +14,7 @@ import Data.Text.Lazy.Encoding (decodeUtf8)
 import Foxfeet.Opt
 import Network.HTTP.Client
 import Network.HTTP.Client.TLS (newTlsManager)
+import Network.URI
 import Options.Applicative (execParser)
 import Text.HTML.TagSoup
 
@@ -20,22 +22,21 @@ main :: IO ()
 main = do
   opt <- execParser opts
   manager <- newTlsManager
-  request <- parseRequest (optUrl opt)
+  request <- parseRequest (show (optUrl opt))
   response <- httpLbs request manager
   let body = responseBody response
   let bodyT = decodeUtf8 body
   let tags = parseTags bodyT
-  let h = getFeeds tags
+  let h = getFeeds (optUrl opt) tags
   feeds <-
     if optCheck opt
       then filterM (checkFeed manager) h
       else pure h
   traverse_ printFeed feeds
 
-getFeeds :: [Tag Text] -> [Feed]
-getFeeds =
-  fmap toFeed
-    . filter isFeed
+getFeeds :: URI -> [Tag Text] -> [Feed]
+getFeeds url =
+  mapMaybe (parseFeed url)
     . filter (isTagOpenName (pack "link"))
     . takeWhile (not . isTagCloseName (pack "head"))
     . dropWhile (not . isTagOpenName (pack "head"))
@@ -53,13 +54,23 @@ types = fmap pack
   "application/json"
   ]
 
-toFeed :: Tag Text -> Feed
-toFeed tag =
-  Feed
-    { feedHref = fromAttrib (pack "href") tag
-    , feedTitle = parseTitle tag
-    , feedType = fromAttrib (pack "type") tag
-    }
+parseFeed :: URI -> Tag Text -> Maybe Feed
+parseFeed url tag =
+  if isFeed tag
+    then
+      case parseURIReference (unpack href) of
+        Just hrefuri ->
+          Just Feed
+            { feedHref = pack (show (relativeTo hrefuri url))
+            , feedTitle = parseTitle tag
+            , feedType = fromAttrib (pack "type") tag
+            }
+        Nothing ->
+          Nothing
+    else Nothing
+  where
+    href =
+      fromAttrib (pack "href") tag
 
 parseTitle :: Tag Text -> Maybe Text
 parseTitle tag =

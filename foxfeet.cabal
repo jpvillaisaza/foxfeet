@@ -23,6 +23,7 @@ library
     , bytestring
     , http-client
     , http-client-tls
+    , network-uri
     , optparse-applicative
     , tagsoup
     , text
