@@ -1,11 +1,11 @@
 module Foxfeet (main) where
 
-import Control.Monad (filterM)
+import Control.Monad (filterM, when)
 import Data.Aeson (Value (..), decode)
 import qualified Data.Aeson.KeyMap as KeyMap
 import Data.Foldable (traverse_)
 import Data.List (find)
-import Data.Maybe (mapMaybe)
+import Data.Maybe (catMaybes, mapMaybe)
 import Data.String (fromString)
 import qualified Data.Text as Text
 import Data.Text.Lazy (Text, pack, unpack)
@@ -33,6 +33,9 @@ main = do
       then filterM (checkFeed manager) h
       else pure h
   traverse_ printFeed feeds
+  when (optGuess opt && null feeds) $ do
+    guessed <- guess manager (optUrl opt)
+    traverse_ printFeed guessed
 
 getFeeds :: URI -> [Tag Text] -> [Feed]
 getFeeds url =
@@ -116,3 +119,30 @@ checkFeed manager feed = do
           pure True
         Nothing ->
           pure False
+
+guess :: Manager -> URI -> IO [Feed]
+guess manager base =
+  filterM (checkFeed manager) (catMaybes feeds)
+  where
+    feeds =
+      [ case parseURIReference "rss.xml" of
+          Just p ->
+            Just (Feed (pack (show (relativeTo p base))) Nothing (pack "application/rss+xml"))
+          Nothing ->
+            Nothing
+      , case parseURIReference "atom.xml" of
+          Just p ->
+            Just (Feed (pack (show (relativeTo p base))) Nothing (pack "application/atom+xml"))
+          Nothing ->
+            Nothing
+      , case parseURIReference "feed" of
+          Just p ->
+            Just (Feed (pack (show (relativeTo p base))) Nothing (pack "application/rss+xml"))
+          Nothing ->
+            Nothing
+      , case parseURIReference "rss" of
+          Just p ->
+            Just (Feed (pack (show (relativeTo p base))) Nothing (pack "application/rss+xml"))
+          Nothing ->
+            Nothing
+      ]
