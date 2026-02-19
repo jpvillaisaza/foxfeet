@@ -37,11 +37,24 @@ executable foxfeet
   build-depends:
     , base
     , foxfeet
+  ghc-options:
+    -threaded
+    -rtsopts
+    -with-rtsopts=-N
 
 test-suite foxfeet-test
   import: common
   hs-source-dirs: test
   main-is: Main.hs
+  other-modules:
+    Foxfeet.FeedSpec
   build-depends:
     , base
     , foxfeet
+    , hspec
+    , network-uri
+    , text
+  ghc-options:
+    -threaded
+    -rtsopts
+    -with-rtsopts=-N

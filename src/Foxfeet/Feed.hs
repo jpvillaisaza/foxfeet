@@ -101,6 +101,7 @@ data Feed = Feed
   , feedTitle :: Maybe Text
   , feedType :: Text
   }
+  deriving (Eq, Show)
 
 checkFeed :: Manager -> Feed -> IO Bool
 checkFeed manager feed = do
