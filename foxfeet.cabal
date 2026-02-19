@@ -1,0 +1,60 @@
+cabal-version: 3.8
+
+name: foxfeet
+version: 0.1.0.0
+
+common common
+  default-language: Haskell2010
+  ghc-options: -Wall
+
+library
+  import: common
+  hs-source-dirs: src
+  exposed-modules:
+    Foxfeet
+    Foxfeet.Feed
+    Foxfeet.Opt
+  other-modules:
+    Paths_foxfeet
+  autogen-modules:
+    Paths_foxfeet
+  build-depends:
+    , aeson >= 2.2.3 && < 2.3
+    , base >= 4.18.3 && < 4.19
+    , bytestring >= 0.11.5 && < 0.12
+    , http-client >= 0.7.19 && < 0.8
+    , http-client-tls >= 0.3.6 && < 0.4
+    , http-types >= 0.12.4 && < 0.13
+    , network-uri >= 2.6.4 && < 2.7
+    , optparse-applicative >= 0.19.0 && < 0.20
+    , tagsoup >= 0.14.8 && < 0.15
+    , text >= 2.0.2 && < 2.1
+
+executable foxfeet
+  import: common
+  hs-source-dirs: app
+  main-is: Main.hs
+  build-depends:
+    , base
+    , foxfeet
+  ghc-options:
+    -threaded
+    -rtsopts
+    -with-rtsopts=-N
+
+test-suite foxfeet-test
+  import: common
+  hs-source-dirs: test
+  main-is: Main.hs
+  other-modules:
+    Foxfeet.FeedSpec
+  build-depends:
+    , base
+    , foxfeet
+    , hspec >= 2.11.16 && < 2.12
+    , network-uri
+    , text
+  ghc-options:
+    -threaded
+    -rtsopts
+    -with-rtsopts=-N
