@@ -96,9 +96,7 @@ parseTitle tag =
 
 printFeed :: Feed -> IO ()
 printFeed feed = do
-  TIO.putStrLn (feedHref feed)
-  TIO.putStrLn (feedType feed)
-  traverse_ TIO.putStrLn (feedTitle feed)
+  TIO.putStrLn (pack "- " <> feedHref feed <> pack " (" <> feedType feed <> pack ")")
 
 data Feed = Feed
   { feedHref :: Text
