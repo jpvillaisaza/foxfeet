@@ -3,6 +3,7 @@ module Foxfeet (main) where
 import Control.Monad (filterM, when)
 import Data.Aeson (Value (..), decode)
 import qualified Data.Aeson.KeyMap as KeyMap
+import qualified Data.ByteString.Char8 as ByteString
 import Data.Foldable (traverse_)
 import Data.List (find)
 import Data.Maybe (catMaybes, mapMaybe)
@@ -11,19 +12,29 @@ import qualified Data.Text as Text
 import Data.Text.Lazy (Text, pack, unpack)
 import qualified Data.Text.Lazy.IO as TIO
 import Data.Text.Lazy.Encoding (decodeUtf8)
+import Data.Version (showVersion)
 import Foxfeet.Opt
 import Network.HTTP.Client
 import Network.HTTP.Client.TLS (newTlsManager)
+import Network.HTTP.Types (hUserAgent)
 import Network.URI
 import Options.Applicative (execParser)
+import Paths_foxfeet (version)
 import Text.HTML.TagSoup
+
+addUserAgent :: Request -> Request
+addUserAgent request =
+  let
+    t = (hUserAgent, ByteString.pack ("foxfeet/" <> showVersion version))
+  in
+    request { requestHeaders = t : requestHeaders request }
 
 main :: IO ()
 main = do
   opt <- execParser opts
   manager <- newTlsManager
   request <- parseRequest (show (optUrl opt))
-  response <- httpLbs request manager
+  response <- httpLbs (addUserAgent request) manager
   let body = responseBody response
   let bodyT = decodeUtf8 body
   let tags = parseTags bodyT
@@ -98,7 +109,7 @@ data Feed = Feed
 checkFeed :: Manager -> Feed -> IO Bool
 checkFeed manager feed = do
   request <- parseRequest (unpack (feedHref feed))
-  response <- httpLbs request manager
+  response <- httpLbs (addUserAgent request) manager
   let body = responseBody response
   case unpack (feedType feed) of
     t | t == "application/json" || t == "application/feed+json"-> do
