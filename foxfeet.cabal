@@ -12,6 +12,7 @@ library
   hs-source-dirs: src
   exposed-modules:
     Foxfeet
+    Foxfeet.Feed
     Foxfeet.Opt
   other-modules:
     Paths_foxfeet
