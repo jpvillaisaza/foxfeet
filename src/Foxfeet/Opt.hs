@@ -12,6 +12,7 @@ import Paths_foxfeet (version)
 data Opt = Opt
   { optCheck :: Bool
   , optGuess :: Bool
+  , optPreview :: Bool
   , optUrl :: URI
   }
 
@@ -20,6 +21,7 @@ opt =
   Opt
     <$> check
     <*> guess
+    <*> previewP
     <*> pUrl
 
 check :: Parser Bool
@@ -38,6 +40,16 @@ guess =
     mods =
       [ long "guess"
       , help mempty
+      ]
+  in
+    switch (fold mods)
+
+previewP :: Parser Bool
+previewP =
+  let
+    mods =
+      [ long "preview"
+      , help "preview"
       ]
   in
     switch (fold mods)

@@ -1,5 +1,6 @@
 module Foxfeet.Feed where
 
+import Control.Applicative
 import Control.Monad (filterM, when)
 import Data.Aeson (Value (..), decode)
 import qualified Data.Aeson.KeyMap as KeyMap
@@ -26,6 +27,71 @@ addUserAgent request =
     t = (hUserAgent, ByteString.pack ("foxfeet/" <> showVersion version))
   in
     request { requestHeaders = t : requestHeaders request }
+
+preview :: Manager -> URI -> IO ()
+preview manager url = do
+  request <- parseRequest (show url)
+  response <- httpLbs (addUserAgent request) manager
+  let body = decodeUtf8 (responseBody response)
+  let tags = parseTags body
+  let items = extractItems tags <|> extractItems2 tags
+  traverse_ printItem items
+
+extractItems :: [Tag Text] -> [Item]
+extractItems =
+  mapMaybe parseItem
+    . concatMap (sections (~== "<item>"))
+    . sections (~== "<rss>")
+
+extractItems2 :: [Tag Text] -> [Item]
+extractItems2 =
+  mapMaybe parseItem2
+    . concatMap (sections (~== "<entry>"))
+    . sections (~== "<feed>")
+
+findBetween :: Text -> [Tag Text] -> Maybe [Tag Text]
+findBetween name [] = Nothing
+findBetween name (x:xs)
+  | isTagOpenName name x =
+      let ys = takeWhile (not . isTagCloseName name) xs
+      in Just ys
+  | otherwise = findBetween name xs
+
+data Item =
+  Item
+    { itemTitle :: Maybe Text
+    , itemLink :: Text
+    , itemPubDate :: Maybe Text
+    }
+  deriving (Eq, Show)
+
+parseItem :: [Tag Text] -> Maybe Item
+parseItem tags =
+  case findBetween (pack "link") tags of
+    Just ts ->
+      Just Item
+        { itemTitle = fmap innerText (findBetween (pack "title") tags)
+        , itemLink = innerText ts
+        , itemPubDate = fmap innerText (findBetween (pack "pubDate") tags)
+        }
+    Nothing ->
+      Nothing
+
+parseItem2 :: [Tag Text] -> Maybe Item
+parseItem2 tags =
+  case find (isTagOpenName (pack "link")) tags of
+    Just tag ->
+      Just Item
+        { itemTitle = fmap innerText (findBetween (pack "title") tags)
+        , itemLink = fromAttrib (pack "href") tag
+        , itemPubDate = fmap innerText (findBetween (pack "pubDate") tags)
+        }
+    Nothing ->
+      Nothing
+
+printItem :: Item -> IO ()
+printItem item = do
+  TIO.putStrLn (pack "- " <> itemLink item )
 
 discover :: Manager -> Opt -> IO ()
 discover manager opt = do
