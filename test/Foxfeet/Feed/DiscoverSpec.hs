@@ -1,7 +1,7 @@
-module Foxfeet.FeedSpec where
+module Foxfeet.Feed.DiscoverSpec where
 
 import qualified Data.Text.Lazy as Text
-import Foxfeet.Feed
+import Foxfeet.Feed.Discover
 import Network.URI (nullURI)
 import Test.Hspec (Spec, describe, it, shouldBe)
 

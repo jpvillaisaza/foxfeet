@@ -1,6 +1,6 @@
 module Foxfeet (main) where
 
-import Foxfeet.Feed (discover)
+import Foxfeet.Feed.Discover (discover)
 import Foxfeet.Feed.Preview (preview)
 import Foxfeet.Opt (Opt(..), opts)
 import Network.HTTP.Client.TLS (newTlsManager)

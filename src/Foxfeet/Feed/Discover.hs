@@ -1,4 +1,4 @@
-module Foxfeet.Feed where
+module Foxfeet.Feed.Discover where
 
 import Control.Monad (filterM, when)
 import Data.Aeson (Value (..), decode)
