@@ -13,6 +13,7 @@ library
   exposed-modules:
     Foxfeet
     Foxfeet.Feed
+    Foxfeet.Feed.Preview
     Foxfeet.Opt
   other-modules:
     Paths_foxfeet
@@ -29,6 +30,7 @@ library
     , optparse-applicative >= 0.19.0 && < 0.20
     , tagsoup >= 0.14.8 && < 0.15
     , text >= 2.0.2 && < 2.1
+    , vector
 
 executable foxfeet
   import: common
