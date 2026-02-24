@@ -27,17 +27,32 @@ addUserAgent request =
   in
     request { requestHeaders = t : requestHeaders request }
 
+data Item =
+  Item
+    { itemTitle :: Maybe Text
+    , itemUrl :: Text
+    , itemPubDate :: Maybe Text
+    }
+  deriving (Eq, Show)
+
 preview :: Manager -> URI -> IO ()
 preview manager url = do
   request <- parseRequest (show url)
   response <- httpLbs (addUserAgent request) manager
-  let body = responseBody response
-  let tags = parseTags (decodeUtf8 body)
-  let items = extractItems tags <|> extractItems2 tags <|> extractItems3 body
+  let items = extractItems (responseBody response)
   traverse_ printItem items
 
-extractItems :: [Tag Text] -> [Item]
-extractItems =
+extractItems :: ByteString -> [Item]
+extractItems body =
+  extractItems1 tags
+    <|> extractItems2 tags
+    <|> extractItems3 body
+  where
+    tags =
+      parseTags (decodeUtf8 body)
+
+extractItems1 :: [Tag Text] -> [Item]
+extractItems1 =
   concatMap (mapMaybe parseItem . sections (~== "<item>"))
     . sections (~== "<rss>")
 
@@ -54,21 +69,13 @@ findBetween name (x:xs)
       in Just ys
   | otherwise = findBetween name xs
 
-data Item =
-  Item
-    { itemTitle :: Maybe Text
-    , itemLink :: Text
-    , itemPubDate :: Maybe Text
-    }
-  deriving (Eq, Show)
-
 parseItem :: [Tag Text] -> Maybe Item
 parseItem tags =
   case findBetween (pack "link") tags of
     Just ts ->
       Just Item
         { itemTitle = fmap innerText (findBetween (pack "title") tags)
-        , itemLink = innerText ts
+        , itemUrl = innerText ts
         , itemPubDate = fmap innerText (findBetween (pack "pubDate") tags)
         }
     Nothing ->
@@ -80,15 +87,20 @@ parseItem2 tags =
     Just tag ->
       Just Item
         { itemTitle = fmap innerText (findBetween (pack "title") tags)
-        , itemLink = fromAttrib (pack "href") tag
+        , itemUrl = fromAttrib (pack "href") tag
         , itemPubDate = fmap innerText (findBetween (pack "pubDate") tags)
         }
     Nothing ->
       Nothing
 
 printItem :: Item -> IO ()
-printItem item = do
-  TIO.putStrLn (pack "- " <> itemLink item )
+printItem item =
+  case itemTitle item of
+    Just title -> do
+      TIO.putStrLn (pack "- title: " <> title)
+      TIO.putStrLn (pack "  url: " <> itemUrl item)
+    Nothing ->
+      TIO.putStrLn (pack "- url: " <> itemUrl item)
 
 extractItems3 :: ByteString -> [Item]
 extractItems3 body =
