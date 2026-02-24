@@ -1,5 +1,7 @@
 module Foxfeet.Opt
-  ( Opt (..)
+  ( Command (..)
+  , DiscoverOpt (..)
+  , PreviewOpt (..)
   , opts
   ) where
 
@@ -9,19 +11,21 @@ import Network.URI
 import Options.Applicative
 import Paths_foxfeet (version)
 
-data Opt = Opt
-  { optCheck :: Bool
-  , optGuess :: Bool
-  , optPreview :: Bool
-  , optUrl :: URI
+data Command
+  = Discover DiscoverOpt
+  | Preview PreviewOpt
+
+data DiscoverOpt = DiscoverOpt
+  { discoverOptCheck :: Bool
+  , discoverOptGuess :: Bool
+  , discoverOptUrl :: URI
   }
 
-opt :: Parser Opt
-opt =
-  Opt
+discoverOpt :: Parser DiscoverOpt
+discoverOpt =
+  DiscoverOpt
     <$> check
     <*> guess
-    <*> previewP
     <*> pUrl
 
 check :: Parser Bool
@@ -40,16 +44,6 @@ guess =
     mods =
       [ long "guess"
       , help mempty
-      ]
-  in
-    switch (fold mods)
-
-previewP :: Parser Bool
-previewP =
-  let
-    mods =
-      [ long "preview"
-      , help "preview"
       ]
   in
     switch (fold mods)
@@ -79,9 +73,15 @@ pUrl2 =
   in
     argument (maybeReader parseURI) (fold mods)
 
-opts :: ParserInfo Opt
+opts :: ParserInfo Command
 opts =
   let
+    cmds =
+      [ command "discover" (info (fmap Discover discoverOpt) (progDesc "discover desc"))
+      , command "preview" (info (fmap Preview previewOpt) (progDesc "preview desc"))
+      ]
+    opt =
+      hsubparser (fold cmds)
     ppp =
       opt
         <**> helper
@@ -94,3 +94,12 @@ opts =
       ]
   in
     info ppp (fold mods)
+
+data PreviewOpt = PreviewOpt
+  { previewOptUrl :: URI
+  }
+
+previewOpt :: Parser PreviewOpt
+previewOpt =
+  PreviewOpt
+    <$> pUrl

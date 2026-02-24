@@ -14,6 +14,7 @@ library
     Foxfeet
     Foxfeet.Feed.Discover
     Foxfeet.Feed.Preview
+    Foxfeet.Http
     Foxfeet.Opt
   other-modules:
     Paths_foxfeet

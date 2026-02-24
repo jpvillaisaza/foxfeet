@@ -3,7 +3,6 @@ module Foxfeet.Feed.Preview where
 import Control.Applicative
 import Data.Aeson
 import qualified Data.Aeson.KeyMap as KeyMap
-import qualified Data.ByteString.Char8 as ByteString
 import Data.ByteString.Lazy (ByteString)
 import Data.Foldable (traverse_)
 import Data.List (find)
@@ -13,19 +12,10 @@ import Data.Text.Lazy (Text, fromStrict, pack)
 import qualified Data.Text.Lazy.IO as TIO
 import Data.Text.Lazy.Encoding (decodeUtf8)
 import Data.Vector (toList)
-import Data.Version (showVersion)
+import Foxfeet.Http (addUserAgent)
+import Foxfeet.Opt
 import Network.HTTP.Client
-import Network.HTTP.Types (hUserAgent)
-import Network.URI
-import Paths_foxfeet (version)
 import Text.HTML.TagSoup
-
-addUserAgent :: Request -> Request
-addUserAgent request =
-  let
-    t = (hUserAgent, ByteString.pack ("foxfeet/" <> showVersion version))
-  in
-    request { requestHeaders = t : requestHeaders request }
 
 data Item =
   Item
@@ -35,8 +25,8 @@ data Item =
     }
   deriving (Eq, Show)
 
-preview :: Manager -> URI -> IO ()
-preview manager url = do
+preview :: Manager -> PreviewOpt -> IO ()
+preview manager (PreviewOpt url) = do
   request <- parseRequest (show url)
   response <- httpLbs (addUserAgent request) manager
   let items = extractItems (responseBody response)
