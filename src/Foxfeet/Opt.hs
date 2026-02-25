@@ -72,14 +72,14 @@ discoverOptionsParser =
   DiscoverOptions
     <$> checkParser
     <*> guessParser
-    <*> mkUrlParser "URL" "URL to discover"
+    <*> mkUrlParser "URL" "URL to discover feeds"
 
 checkParser :: Options.Parser Bool
 checkParser =
   let
     mods =
       [ Options.long "check"
-      , Options.help "the help for check"
+      , Options.help "Validate feeds"
       ]
   in
     Options.switch (fold mods)
@@ -89,7 +89,7 @@ guessParser =
   let
     mods =
       [ Options.long "guess"
-      , Options.help "the help for guess"
+      , Options.help "Guess feeds"
       ]
   in
     Options.switch (fold mods)
