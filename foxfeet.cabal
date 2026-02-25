@@ -12,8 +12,9 @@ library
   hs-source-dirs: src
   exposed-modules:
     Foxfeet
-    Foxfeet.Feed
+    Foxfeet.Feed.Discover
     Foxfeet.Feed.Preview
+    Foxfeet.Http
     Foxfeet.Opt
   other-modules:
     Paths_foxfeet
@@ -49,7 +50,7 @@ test-suite foxfeet-test
   hs-source-dirs: test
   main-is: Main.hs
   other-modules:
-    Foxfeet.FeedSpec
+    Foxfeet.Feed.DiscoverSpec
   build-depends:
     , base
     , foxfeet

@@ -1,9 +1,8 @@
-module Foxfeet.Feed where
+module Foxfeet.Feed.Discover where
 
 import Control.Monad (filterM, when)
 import Data.Aeson (Value (..), decode)
 import qualified Data.Aeson.KeyMap as KeyMap
-import qualified Data.ByteString.Char8 as ByteString
 import Data.Foldable (traverse_)
 import Data.List (find)
 import Data.Maybe (catMaybes, mapMaybe)
@@ -12,34 +11,24 @@ import qualified Data.Text as Text
 import Data.Text.Lazy (Text, pack, unpack)
 import qualified Data.Text.Lazy.IO as TIO
 import Data.Text.Lazy.Encoding (decodeUtf8)
-import Data.Version (showVersion)
-import Foxfeet.Opt
+import Foxfeet.Http (addUserAgent)
 import Network.HTTP.Client
-import Network.HTTP.Types (hUserAgent)
 import Network.URI
-import Paths_foxfeet (version)
 import Text.HTML.TagSoup
 
-addUserAgent :: Request -> Request
-addUserAgent request =
-  let
-    t = (hUserAgent, ByteString.pack ("foxfeet/" <> showVersion version))
-  in
-    request { requestHeaders = t : requestHeaders request }
-
-discover :: Manager -> Opt -> IO ()
-discover manager opt = do
-  request <- parseRequest (show (optUrl opt))
+discover :: Manager -> URI -> Bool -> Bool -> IO ()
+discover manager url check guess = do
+  request <- parseRequest (show url)
   response <- httpLbs (addUserAgent request) manager
   let body = responseBody response
-  let h = extractFeeds (optUrl opt) (decodeUtf8 body)
+  let h = extractFeeds url (decodeUtf8 body)
   feeds <-
-    if optCheck opt
+    if check
       then filterM (checkFeed manager) h
       else pure h
   traverse_ printFeed feeds
-  when (optGuess opt && null feeds) $ do
-    guessed <- guess manager (optUrl opt)
+  when (guess && null feeds) $ do
+    guessed <- guessFeeds manager url
     traverse_ printFeed guessed
 
 extractFeeds :: URI -> Text -> [Feed]
@@ -128,8 +117,8 @@ checkFeed manager feed = do
         Nothing ->
           pure False
 
-guess :: Manager -> URI -> IO [Feed]
-guess manager base =
+guessFeeds :: Manager -> URI -> IO [Feed]
+guessFeeds manager base =
   filterM (checkFeed manager) (catMaybes feeds)
   where
     feeds =
