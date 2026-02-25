@@ -2,7 +2,7 @@ module Foxfeet.Opt
   ( Command (..)
   , DiscoverOpt (..)
   , PreviewOpt (..)
-  , opts
+  , commandParserInfo
   ) where
 
 import Data.Foldable (fold)
@@ -21,35 +21,35 @@ data DiscoverOpt = DiscoverOpt
   , discoverOptUrl :: URI
   }
 
-discoverOpt :: Parser DiscoverOpt
-discoverOpt =
+discoverOptParser :: Parser DiscoverOpt
+discoverOptParser =
   DiscoverOpt
-    <$> check
-    <*> guess
-    <*> pUrl
+    <$> checkParser
+    <*> guessParser
+    <*> urlParser
 
-check :: Parser Bool
-check =
+checkParser :: Parser Bool
+checkParser =
   let
     mods =
       [ long "check"
-      , help mempty
+      , help "the help for check"
       ]
   in
     switch (fold mods)
 
-guess :: Parser Bool
-guess =
+guessParser :: Parser Bool
+guessParser =
   let
     mods =
       [ long "guess"
-      , help mempty
+      , help "the help for guess"
       ]
   in
     switch (fold mods)
 
-pUrl :: Parser URI
-pUrl =
+urlParser :: Parser URI
+urlParser =
   pUrl1 <|> pUrl2
 
 pUrl1 :: Parser URI
@@ -58,7 +58,7 @@ pUrl1 =
     mods =
       [ long "url"
       , metavar "URL"
-      , help mempty
+      , help "the help for url"
       ]
   in
     option (maybeReader parseURI) (fold mods)
@@ -68,17 +68,17 @@ pUrl2 =
   let
     mods =
       [ metavar "URL"
-      , help mempty
+      , help "the other help for URL"
       ]
   in
     argument (maybeReader parseURI) (fold mods)
 
-opts :: ParserInfo Command
-opts =
+commandParserInfo :: ParserInfo Command
+commandParserInfo =
   let
     cmds =
-      [ command "discover" (info (fmap Discover discoverOpt) (progDesc "discover desc"))
-      , command "preview" (info (fmap Preview previewOpt) (progDesc "preview desc"))
+      [ command "discover" (info (fmap Discover discoverOptParser) (progDesc "discover desc"))
+      , command "preview" (info (fmap Preview previewOptParser) (progDesc "preview desc"))
       ]
     opt =
       hsubparser (fold cmds)
@@ -99,7 +99,7 @@ data PreviewOpt = PreviewOpt
   { previewOptUrl :: URI
   }
 
-previewOpt :: Parser PreviewOpt
-previewOpt =
+previewOptParser :: Parser PreviewOpt
+previewOptParser =
   PreviewOpt
-    <$> pUrl
+    <$> urlParser

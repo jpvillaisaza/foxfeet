@@ -13,8 +13,8 @@ import qualified Data.Text.Lazy.IO as TIO
 import Data.Text.Lazy.Encoding (decodeUtf8)
 import Data.Vector (toList)
 import Foxfeet.Http (addUserAgent)
-import Foxfeet.Opt
 import Network.HTTP.Client
+import Network.URI (URI)
 import Text.HTML.TagSoup
 
 data Item =
@@ -25,8 +25,8 @@ data Item =
     }
   deriving (Eq, Show)
 
-preview :: Manager -> PreviewOpt -> IO ()
-preview manager (PreviewOpt url) = do
+preview :: Manager -> URI -> IO ()
+preview manager url = do
   request <- parseRequest (show url)
   response <- httpLbs (addUserAgent request) manager
   let items = extractItems (responseBody response)

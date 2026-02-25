@@ -12,24 +12,23 @@ import Data.Text.Lazy (Text, pack, unpack)
 import qualified Data.Text.Lazy.IO as TIO
 import Data.Text.Lazy.Encoding (decodeUtf8)
 import Foxfeet.Http (addUserAgent)
-import Foxfeet.Opt
 import Network.HTTP.Client
 import Network.URI
 import Text.HTML.TagSoup
 
-discover :: Manager -> DiscoverOpt -> IO ()
-discover manager opt = do
-  request <- parseRequest (show (discoverOptUrl opt))
+discover :: Manager -> URI -> Bool -> Bool -> IO ()
+discover manager url check isguess = do
+  request <- parseRequest (show url)
   response <- httpLbs (addUserAgent request) manager
   let body = responseBody response
-  let h = extractFeeds (discoverOptUrl opt) (decodeUtf8 body)
+  let h = extractFeeds url (decodeUtf8 body)
   feeds <-
-    if discoverOptCheck opt
+    if check
       then filterM (checkFeed manager) h
       else pure h
   traverse_ printFeed feeds
-  when (discoverOptGuess opt && null feeds) $ do
-    guessed <- guess manager (discoverOptUrl opt)
+  when (isguess && null feeds) $ do
+    guessed <- guess manager url
     traverse_ printFeed guessed
 
 extractFeeds :: URI -> Text -> [Feed]
