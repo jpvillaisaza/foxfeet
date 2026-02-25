@@ -17,7 +17,7 @@ import Network.URI
 import Text.HTML.TagSoup
 
 discover :: Manager -> URI -> Bool -> Bool -> IO ()
-discover manager url check isguess = do
+discover manager url check guess = do
   request <- parseRequest (show url)
   response <- httpLbs (addUserAgent request) manager
   let body = responseBody response
@@ -27,8 +27,8 @@ discover manager url check isguess = do
       then filterM (checkFeed manager) h
       else pure h
   traverse_ printFeed feeds
-  when (isguess && null feeds) $ do
-    guessed <- guess manager url
+  when (guess && null feeds) $ do
+    guessed <- guessFeeds manager url
     traverse_ printFeed guessed
 
 extractFeeds :: URI -> Text -> [Feed]
@@ -117,8 +117,8 @@ checkFeed manager feed = do
         Nothing ->
           pure False
 
-guess :: Manager -> URI -> IO [Feed]
-guess manager base =
+guessFeeds :: Manager -> URI -> IO [Feed]
+guessFeeds manager base =
   filterM (checkFeed manager) (catMaybes feeds)
   where
     feeds =

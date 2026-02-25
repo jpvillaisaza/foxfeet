@@ -1,105 +1,114 @@
 module Foxfeet.Opt
-  ( Command (..)
-  , DiscoverOpt (..)
-  , PreviewOpt (..)
-  , commandParserInfo
+  ( Options (..)
+  , optionsParserInfo
+  , Command (..)
+  , DiscoverOptions (..)
+  , PreviewOptions (..)
   ) where
 
+import Control.Applicative ((<**>))
 import Data.Foldable (fold)
 import Data.Version (showVersion)
-import Network.URI
-import Options.Applicative
+import Network.URI (URI, parseURI)
+import qualified Options.Applicative as Options
 import Paths_foxfeet (version)
 
-data Command
-  = Discover DiscoverOpt
-  | Preview PreviewOpt
-
-data DiscoverOpt = DiscoverOpt
-  { discoverOptCheck :: Bool
-  , discoverOptGuess :: Bool
-  , discoverOptUrl :: URI
+newtype Options = Options
+  { optionsCommand :: Command
   }
 
-discoverOptParser :: Parser DiscoverOpt
-discoverOptParser =
-  DiscoverOpt
+optionsParserInfo :: Options.ParserInfo Options
+optionsParserInfo =
+  let
+    optionsParser =
+      fmap Options commandParser
+        <**> Options.helper
+        <**> Options.simpleVersioner (showVersion version)
+    mods =
+      [ Options.fullDesc
+      , Options.header mempty
+      , Options.progDesc mempty
+      , Options.footer mempty
+      ]
+  in
+    Options.info optionsParser (fold mods)
+
+data Command
+  = Discover DiscoverOptions
+  | Preview PreviewOptions
+
+commandParser :: Options.Parser Command
+commandParser =
+  let
+    discoverParserInfo =
+      let
+        mods =
+          [ Options.progDesc "Discover feeds"
+          ]
+      in
+        Options.info (fmap Discover discoverOptionsParser) (fold mods)
+    previewParserInfo =
+      let
+        mods =
+          [ Options.progDesc "Preview a feed"
+          ]
+      in
+        Options.info (fmap Preview previewOptionsParser) (fold mods)
+    cmds =
+      [ Options.command "discover" discoverParserInfo
+      , Options.command "preview" previewParserInfo
+      ]
+  in
+    Options.hsubparser (fold cmds)
+
+data DiscoverOptions = DiscoverOptions
+  { discoverOptionsCheck :: Bool
+  , discoverOptionsGuess :: Bool
+  , discoverOptionsUrl :: URI
+  }
+
+discoverOptionsParser :: Options.Parser DiscoverOptions
+discoverOptionsParser =
+  DiscoverOptions
     <$> checkParser
     <*> guessParser
-    <*> urlParser
+    <*> mkUrlParser "URL" "URL to discover"
 
-checkParser :: Parser Bool
+checkParser :: Options.Parser Bool
 checkParser =
   let
     mods =
-      [ long "check"
-      , help "the help for check"
+      [ Options.long "check"
+      , Options.help "the help for check"
       ]
   in
-    switch (fold mods)
+    Options.switch (fold mods)
 
-guessParser :: Parser Bool
+guessParser :: Options.Parser Bool
 guessParser =
   let
     mods =
-      [ long "guess"
-      , help "the help for guess"
+      [ Options.long "guess"
+      , Options.help "the help for guess"
       ]
   in
-    switch (fold mods)
+    Options.switch (fold mods)
 
-urlParser :: Parser URI
-urlParser =
-  pUrl1 <|> pUrl2
-
-pUrl1 :: Parser URI
-pUrl1 =
+mkUrlParser :: String -> String -> Options.Parser URI
+mkUrlParser mv h =
   let
     mods =
-      [ long "url"
-      , metavar "URL"
-      , help "the help for url"
+      [ Options.metavar mv
+      , Options.help h
       ]
   in
-    option (maybeReader parseURI) (fold mods)
+    Options.argument (Options.maybeReader parseURI) (fold mods)
 
-pUrl2 :: Parser URI
-pUrl2 =
-  let
-    mods =
-      [ metavar "URL"
-      , help "the other help for URL"
-      ]
-  in
-    argument (maybeReader parseURI) (fold mods)
-
-commandParserInfo :: ParserInfo Command
-commandParserInfo =
-  let
-    cmds =
-      [ command "discover" (info (fmap Discover discoverOptParser) (progDesc "discover desc"))
-      , command "preview" (info (fmap Preview previewOptParser) (progDesc "preview desc"))
-      ]
-    opt =
-      hsubparser (fold cmds)
-    ppp =
-      opt
-        <**> helper
-        <**> simpleVersioner (showVersion version)
-    mods =
-      [ fullDesc
-      , header mempty
-      , progDesc mempty
-      , footer mempty
-      ]
-  in
-    info ppp (fold mods)
-
-data PreviewOpt = PreviewOpt
-  { previewOptUrl :: URI
+newtype PreviewOptions = PreviewOptions
+  { previewOptionsUrl :: URI
   }
 
-previewOptParser :: Parser PreviewOpt
-previewOptParser =
-  PreviewOpt
-    <$> urlParser
+previewOptionsParser :: Options.Parser PreviewOptions
+previewOptionsParser =
+  PreviewOptions
+    <$> mkUrlParser "FEED_URL" "Feed URL to preview"
