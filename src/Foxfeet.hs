@@ -1,7 +1,9 @@
 module Foxfeet (main) where
 
-import Foxfeet.Feed.Discover (discover)
-import Foxfeet.Feed.Preview (preview)
+import Data.Foldable (traverse_)
+import qualified Data.Text.Lazy.IO as Text.Lazy.IO
+import Foxfeet.Feed.Discover (discoverFeeds, renderFeed)
+import Foxfeet.Feed.Preview (previewFeed, renderItem)
 import Foxfeet.Opt
   ( Command (..)
   , DiscoverOptions (..)
@@ -17,7 +19,9 @@ main = do
   options <- execParser optionsParserInfo
   manager <- newTlsManager
   case optionsCommand options of
-    Discover (DiscoverOptions check guess url) ->
-      discover manager url check guess
-    Preview (PreviewOptions url) ->
-      preview manager url
+    Discover (DiscoverOptions check guess url) -> do
+      feeds <- discoverFeeds manager url check guess
+      traverse_ (Text.Lazy.IO.putStr . renderFeed) feeds
+    Preview (PreviewOptions url) -> do
+      items <- previewFeed manager url
+      traverse_ (Text.Lazy.IO.putStr . renderItem) items

@@ -7,14 +7,14 @@ import Test.Hspec (Spec, describe, it, shouldBe)
 
 spec :: Spec
 spec =
-  describe "extractFeeds" $ do
+  describe "parseFeeds" $ do
     it "no feeds" $ do
       let
         html =
           "<!doctype html>\
           \<html>\
           \</html>"
-      extractFeeds nullURI (Text.pack html)
+      parseFeeds nullURI (Text.pack html)
         `shouldBe` []
     it "alternate feed missing values" $ do
       let
@@ -25,7 +25,7 @@ spec =
           \    <link rel=\"alternate\">\
           \  </head>\
           \</html>"
-      extractFeeds nullURI (Text.pack html)
+      parseFeeds nullURI (Text.pack html)
         `shouldBe` []
     it "RSS" $ do
       let
@@ -36,8 +36,8 @@ spec =
           \    <link rel=\"alternate\" type=\"application/rss+xml\" href=\"/rss\">\
           \  </head>\
           \</html>"
-      extractFeeds nullURI (Text.pack html)
-        `shouldBe` [Feed (Text.pack "/rss") Nothing (Text.pack "application/rss+xml")]
+      parseFeeds nullURI (Text.pack html)
+        `shouldBe` [Feed Nothing (Text.pack "/rss") (Text.pack "application/rss+xml")]
     it "Atom" $ do
       let
         html =
@@ -47,8 +47,8 @@ spec =
           \    <link rel=\"alternate\" type=\"application/atom+xml\" href=\"/atom\">\
           \  </head>\
           \</html>"
-      extractFeeds nullURI (Text.pack html)
-        `shouldBe` [Feed (Text.pack "/atom") Nothing (Text.pack "application/atom+xml")]
+      parseFeeds nullURI (Text.pack html)
+        `shouldBe` [Feed Nothing (Text.pack "/atom") (Text.pack "application/atom+xml")]
     it "JSON" $ do
       let
         html =
@@ -58,8 +58,8 @@ spec =
           \    <link rel=\"alternate\" type=\"application/feed+json\" href=\"/json\">\
           \  </head>\
           \</html>"
-      extractFeeds nullURI (Text.pack html)
-        `shouldBe` [Feed (Text.pack "/json") Nothing (Text.pack "application/feed+json")]
+      parseFeeds nullURI (Text.pack html)
+        `shouldBe` [Feed Nothing (Text.pack "/json") (Text.pack "application/feed+json")]
     it "skips feed in body" $ do
       let
         html =
@@ -70,7 +70,7 @@ spec =
           \    <link rel=\"alternate\" type=\"application/rss+xml\" href=\"/rss\">\
           \  </body>\
           \</html>"
-      extractFeeds nullURI (Text.pack html)
+      parseFeeds nullURI (Text.pack html)
         `shouldBe` []
     it "skips feed in pre" $ do
       let
@@ -84,7 +84,7 @@ spec =
           \    </pre>\
           \  </body>\
           \</html>"
-      extractFeeds nullURI (Text.pack html)
+      parseFeeds nullURI (Text.pack html)
         `shouldBe` []
     it "accepts title" $ do
       let
@@ -95,8 +95,8 @@ spec =
           \    <link rel=\"alternate\" type=\"application/rss+xml\" href=\"/rss\" title=\"a\">\
           \  </head>\
           \</html>"
-      extractFeeds nullURI (Text.pack html)
-        `shouldBe` [Feed (Text.pack "/rss") (Just (Text.pack "a")) (Text.pack "application/rss+xml")]
+      parseFeeds nullURI (Text.pack html)
+        `shouldBe` [Feed (Just (Text.pack "a")) (Text.pack "/rss") (Text.pack "application/rss+xml")]
     it "accepts several" $ do
       let
         html =
@@ -108,9 +108,9 @@ spec =
           \    <link rel=\"alternate\" type=\"application/feed+json\" href=\"/json\">\
           \  </head>\
           \</html>"
-      extractFeeds nullURI (Text.pack html)
+      parseFeeds nullURI (Text.pack html)
         `shouldBe`
-        [ Feed (Text.pack "/rss") Nothing (Text.pack "application/rss+xml")
-        , Feed (Text.pack "/atom") Nothing (Text.pack "application/atom+xml")
-        , Feed (Text.pack "/json") Nothing (Text.pack "application/feed+json")
+        [ Feed Nothing (Text.pack "/rss") (Text.pack "application/rss+xml")
+        , Feed Nothing (Text.pack "/atom") (Text.pack "application/atom+xml")
+        , Feed Nothing (Text.pack "/json") (Text.pack "application/feed+json")
         ]

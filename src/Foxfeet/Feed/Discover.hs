@@ -1,46 +1,44 @@
 module Foxfeet.Feed.Discover where
 
-import Control.Monad (filterM, when)
-import Data.Aeson (Value (..), decode)
-import qualified Data.Aeson.KeyMap as KeyMap
-import Data.Foldable (traverse_)
-import Data.List (find)
+import Control.Monad (filterM)
 import Data.Maybe (catMaybes, mapMaybe)
-import Data.String (fromString)
-import qualified Data.Text as Text
 import Data.Text.Lazy (Text, pack, unpack)
-import qualified Data.Text.Lazy.IO as TIO
+import qualified Data.Text.Lazy as Text.Lazy
 import Data.Text.Lazy.Encoding (decodeUtf8)
+import Foxfeet.Feed.Preview (previewFeed)
 import Foxfeet.Http (addUserAgent)
 import Network.HTTP.Client
 import Network.URI
 import Text.HTML.TagSoup
 
-discover :: Manager -> URI -> Bool -> Bool -> IO ()
-discover manager url check guess = do
+data Feed = Feed
+  { feedTitle :: Maybe Text
+  , feedUrl :: Text
+  , feedType :: Text
+  }
+  deriving (Eq, Show)
+
+discoverFeeds :: Manager -> URI -> Bool -> Bool -> IO [Feed]
+discoverFeeds manager url check guess = do
   request <- parseRequest (show url)
   response <- httpLbs (addUserAgent request) manager
   let body = responseBody response
-  let h = extractFeeds url (decodeUtf8 body)
+  let h = parseFeeds url (decodeUtf8 body)
   feeds <-
     if check
       then filterM (checkFeed manager) h
       else pure h
-  traverse_ printFeed feeds
-  when (guess && null feeds) $ do
-    guessed <- guessFeeds manager url
-    traverse_ printFeed guessed
+  if guess && null feeds
+    then guessFeeds manager url
+    else pure feeds
 
-extractFeeds :: URI -> Text -> [Feed]
-extractFeeds url =
-  getFeeds url . parseTags
-
-getFeeds :: URI -> [Tag Text] -> [Feed]
-getFeeds url =
+parseFeeds :: URI -> Text -> [Feed]
+parseFeeds url =
   mapMaybe (parseFeed url)
     . filter (isTagOpenName (pack "link"))
     . takeWhile (not . isTagCloseName (pack "head"))
     . dropWhile (not . isTagOpenName (pack "head"))
+    . parseTags
 
 isFeed :: Tag Text -> Bool
 isFeed tag =
@@ -62,7 +60,7 @@ parseFeed url tag =
       case parseURIReference (unpack href) of
         Just hrefuri ->
           Just Feed
-            { feedHref = pack (show (relativeTo hrefuri url))
+            { feedUrl = pack (show (relativeTo hrefuri url))
             , feedTitle = parseTitle tag
             , feedType = fromAttrib (pack "type") tag
             }
@@ -81,41 +79,14 @@ parseTitle tag =
     t ->
       Just t
 
-printFeed :: Feed -> IO ()
-printFeed feed = do
-  TIO.putStrLn (pack "- " <> feedHref feed <> pack " (" <> feedType feed <> pack ")")
-
-data Feed = Feed
-  { feedHref :: Text
-  , feedTitle :: Maybe Text
-  , feedType :: Text
-  }
-  deriving (Eq, Show)
-
 checkFeed :: Manager -> Feed -> IO Bool
-checkFeed manager feed = do
-  request <- parseRequest (unpack (feedHref feed))
-  response <- httpLbs (addUserAgent request) manager
-  let body = responseBody response
-  case unpack (feedType feed) of
-    t | t == "application/json" || t == "application/feed+json"-> do
-      case decode body of
-        Just (Object o) ->
-          case KeyMap.lookup (fromString "version") o of
-            Just (String ver) ->
-              pure (Text.isPrefixOf (Text.pack "https://jsonfeed.org/version/") ver)
-            _ ->
-              pure False
-        _ ->
-          pure False
-    _ -> do
-      let bodyT = decodeUtf8 body
-      let tags = parseTags bodyT
-      case find (\t -> isTagOpenName (pack "rss") t || isTagOpenName (pack "feed") t) tags of
-        Just _ ->
-          pure True
-        Nothing ->
-          pure False
+checkFeed manager feed =
+  case parseURI (unpack (feedUrl feed)) of
+    Just url -> do
+      items <- previewFeed manager url
+      pure (items /= mempty)
+    Nothing ->
+      pure False
 
 guessFeeds :: Manager -> URI -> IO [Feed]
 guessFeeds manager base =
@@ -124,22 +95,29 @@ guessFeeds manager base =
     feeds =
       [ case parseURIReference "rss.xml" of
           Just p ->
-            Just (Feed (pack (show (relativeTo p base))) Nothing (pack "application/rss+xml"))
+            Just (Feed Nothing (pack (show (relativeTo p base))) (pack "application/rss+xml"))
           Nothing ->
             Nothing
       , case parseURIReference "atom.xml" of
           Just p ->
-            Just (Feed (pack (show (relativeTo p base))) Nothing (pack "application/atom+xml"))
+            Just (Feed Nothing (pack (show (relativeTo p base))) (pack "application/atom+xml"))
           Nothing ->
             Nothing
       , case parseURIReference "feed" of
           Just p ->
-            Just (Feed (pack (show (relativeTo p base))) Nothing (pack "application/rss+xml"))
+            Just (Feed Nothing (pack (show (relativeTo p base))) (pack "application/rss+xml"))
           Nothing ->
             Nothing
       , case parseURIReference "rss" of
           Just p ->
-            Just (Feed (pack (show (relativeTo p base))) Nothing (pack "application/rss+xml"))
+            Just (Feed Nothing (pack (show (relativeTo p base))) (pack "application/rss+xml"))
           Nothing ->
             Nothing
       ]
+
+renderFeed :: Feed -> Text
+renderFeed feed =
+  Text.Lazy.unlines
+    [ pack "- url: " <> feedUrl feed
+    , pack "  type: " <> feedType feed
+    ]
