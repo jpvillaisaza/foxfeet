@@ -51,6 +51,7 @@ test-suite foxfeet-test
   main-is: Main.hs
   other-modules:
     Foxfeet.Feed.DiscoverSpec
+    Foxfeet.Feed.PreviewSpec
   build-depends:
     , base
     , foxfeet

@@ -4,12 +4,11 @@ import Control.Applicative
 import Data.Aeson
 import qualified Data.Aeson.KeyMap as KeyMap
 import Data.ByteString.Lazy (ByteString)
-import Data.Foldable (traverse_)
 import Data.List (find)
 import Data.Maybe (mapMaybe)
 import Data.String (fromString)
 import Data.Text.Lazy (Text, fromStrict, pack)
-import qualified Data.Text.Lazy.IO as TIO
+import qualified Data.Text.Lazy as Text.Lazy
 import Data.Text.Lazy.Encoding (decodeUtf8)
 import Data.Vector (toList)
 import Foxfeet.Http (addUserAgent)
@@ -25,29 +24,29 @@ data Item =
     }
   deriving (Eq, Show)
 
-preview :: Manager -> URI -> IO ()
-preview manager url = do
+previewFeed :: Manager -> URI -> IO [Item]
+previewFeed manager url = do
   request <- parseRequest (show url)
   response <- httpLbs (addUserAgent request) manager
-  let items = extractItems (responseBody response)
-  traverse_ printItem items
+  let items = parseItems (responseBody response)
+  pure items
 
-extractItems :: ByteString -> [Item]
-extractItems body =
-  extractItems1 tags
-    <|> extractItems2 tags
-    <|> extractItems3 body
+parseItems :: ByteString -> [Item]
+parseItems body =
+  parseItems1 tags
+    <|> parseItems2 tags
+    <|> parseItems3 body
   where
     tags =
       parseTags (decodeUtf8 body)
 
-extractItems1 :: [Tag Text] -> [Item]
-extractItems1 =
+parseItems1 :: [Tag Text] -> [Item]
+parseItems1 =
   concatMap (mapMaybe parseItem . sections (~== "<item>"))
     . sections (~== "<rss>")
 
-extractItems2 :: [Tag Text] -> [Item]
-extractItems2 =
+parseItems2 :: [Tag Text] -> [Item]
+parseItems2 =
   concatMap (mapMaybe parseItem2 . sections (~== "<entry>"))
     . sections (~== "<feed>")
 
@@ -83,17 +82,8 @@ parseItem2 tags =
     Nothing ->
       Nothing
 
-printItem :: Item -> IO ()
-printItem item =
-  case itemTitle item of
-    Just title -> do
-      TIO.putStrLn (pack "- title: " <> title)
-      TIO.putStrLn (pack "  url: " <> itemUrl item)
-    Nothing ->
-      TIO.putStrLn (pack "- url: " <> itemUrl item)
-
-extractItems3 :: ByteString -> [Item]
-extractItems3 body =
+parseItems3 :: ByteString -> [Item]
+parseItems3 body =
   case decode body of
     Just (Object o) ->
       case KeyMap.lookup (fromString "items") o of
@@ -113,3 +103,16 @@ parseItem3 (Object o) = do
             _ -> Nothing
   pure $ Item (Just (fromStrict t)) (fromStrict l) (fmap fromStrict d)
 parseItem3 _ = Nothing
+
+renderItem :: Item -> Text
+renderItem item =
+  case itemTitle item of
+    Just title ->
+      Text.Lazy.unlines
+        [ pack "- title: " <> title
+        , pack "  url: " <> itemUrl item
+        ]
+    Nothing ->
+      Text.Lazy.unlines
+        [ pack "- url: " <> itemUrl item
+        ]
