@@ -2,8 +2,7 @@ module Foxfeet (main) where
 
 import Data.Foldable (traverse_)
 import qualified Data.Text.Lazy.IO as Text.Lazy.IO
-import Foxfeet.Feed.Discover (discoverFeeds, renderFeed)
-import Foxfeet.Feed.Preview (previewFeed, renderItem)
+import Foxfeet.Feed
 import Foxfeet.Opt
   ( Command (..)
   , DiscoverOptions (..)

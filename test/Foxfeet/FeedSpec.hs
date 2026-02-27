@@ -1,7 +1,7 @@
-module Foxfeet.Feed.DiscoverSpec where
+module Foxfeet.FeedSpec where
 
 import qualified Data.Text.Lazy as Text
-import Foxfeet.Feed.Discover
+import Foxfeet.Feed
 import Network.URI (nullURI)
 import Test.Hspec (Spec, describe, it, shouldBe)
 
@@ -37,7 +37,7 @@ spec =
           \  </head>\
           \</html>"
       parseFeeds nullURI (Text.pack html)
-        `shouldBe` [Feed Nothing (Text.pack "/rss") (Text.pack "application/rss+xml")]
+        `shouldBe` [Feed Rss Nothing (Text.pack "/rss") (Text.pack "application/rss+xml")]
     it "Atom" $ do
       let
         html =
@@ -48,7 +48,7 @@ spec =
           \  </head>\
           \</html>"
       parseFeeds nullURI (Text.pack html)
-        `shouldBe` [Feed Nothing (Text.pack "/atom") (Text.pack "application/atom+xml")]
+        `shouldBe` [Feed Atom Nothing (Text.pack "/atom") (Text.pack "application/atom+xml")]
     it "JSON" $ do
       let
         html =
@@ -59,7 +59,7 @@ spec =
           \  </head>\
           \</html>"
       parseFeeds nullURI (Text.pack html)
-        `shouldBe` [Feed Nothing (Text.pack "/json") (Text.pack "application/feed+json")]
+        `shouldBe` [Feed Json Nothing (Text.pack "/json") (Text.pack "application/feed+json")]
     it "skips feed in body" $ do
       let
         html =
@@ -96,7 +96,7 @@ spec =
           \  </head>\
           \</html>"
       parseFeeds nullURI (Text.pack html)
-        `shouldBe` [Feed (Just (Text.pack "a")) (Text.pack "/rss") (Text.pack "application/rss+xml")]
+        `shouldBe` [Feed Rss (Just (Text.pack "a")) (Text.pack "/rss") (Text.pack "application/rss+xml")]
     it "accepts several" $ do
       let
         html =
@@ -110,7 +110,7 @@ spec =
           \</html>"
       parseFeeds nullURI (Text.pack html)
         `shouldBe`
-        [ Feed Nothing (Text.pack "/rss") (Text.pack "application/rss+xml")
-        , Feed Nothing (Text.pack "/atom") (Text.pack "application/atom+xml")
-        , Feed Nothing (Text.pack "/json") (Text.pack "application/feed+json")
+        [ Feed Rss Nothing (Text.pack "/rss") (Text.pack "application/rss+xml")
+        , Feed Atom Nothing (Text.pack "/atom") (Text.pack "application/atom+xml")
+        , Feed Json Nothing (Text.pack "/json") (Text.pack "application/feed+json")
         ]

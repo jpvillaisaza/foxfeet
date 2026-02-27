@@ -1,9 +1,9 @@
 module Main (main) where
 
-import qualified Foxfeet.Feed.DiscoverSpec as Foxfeet.Feed.Discover
+import qualified Foxfeet.FeedSpec as Foxfeet.Feed
 import Test.Hspec (hspec, parallel)
 
 main :: IO ()
 main =
   hspec
-    (parallel Foxfeet.Feed.Discover.spec)
+    (parallel Foxfeet.Feed.spec)
