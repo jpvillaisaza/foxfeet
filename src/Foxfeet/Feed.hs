@@ -1,24 +1,43 @@
 module Foxfeet.Feed where
 
-import Control.Applicative
-import Control.Monad (filterM)
+-- aeson
 import Data.Aeson
 import qualified Data.Aeson.KeyMap as KeyMap
-import qualified Data.ByteString.Char8 as ByteString
-import Data.ByteString.Lazy (ByteString)
+
+-- base
+import Control.Applicative
+import Control.Monad (filterM)
 import Data.List (find)
 import Data.Maybe (catMaybes, mapMaybe)
 import Data.String (IsString (..))
+import Data.Version (showVersion)
+
+-- bytestring
+import qualified Data.ByteString.Char8 as ByteString
+import Data.ByteString.Lazy (ByteString)
+
+-- foxfeet
+import Paths_foxfeet (version)
+
+-- http-client
+import Network.HTTP.Client
+
+-- http-types
+import Network.HTTP.Types (hUserAgent)
+
+-- network-uri
+import Network.URI
+
+-- tagsoup
+import Text.HTML.TagSoup
+
+-- text
 import Data.Text.Lazy (Text, fromStrict, pack, unpack)
 import qualified Data.Text.Lazy as Text.Lazy
 import Data.Text.Lazy.Encoding (decodeUtf8)
+
+-- vector
 import Data.Vector (toList)
-import Data.Version (showVersion)
-import Network.HTTP.Client
-import Network.HTTP.Types (hUserAgent)
-import Network.URI
-import Paths_foxfeet (version)
-import Text.HTML.TagSoup
 
 data Feed = Feed
   { feedFormat :: Format

@@ -1,15 +1,30 @@
 module Main (main) where
 
+-- base
 import Control.Concurrent (forkIO, killThread)
 import Control.Exception (bracket)
-import qualified Data.Text.Lazy as Text
+
+-- foxfeet
 import Foxfeet.Feed
-import Network.HTTP.Client.TLS (newTlsManager)
-import Network.URI (URI (..), URIAuth (..), nullURI)
-import Network.Wai.Application.Static
-import Network.Wai.Handler.Warp
+
+-- hspec
 import Test.Hspec (Spec, describe, hspec, it, shouldBe)
 import qualified Test.Hspec as Hspec
+
+-- http-client-tls
+import Network.HTTP.Client.TLS (newTlsManager)
+
+-- network-uri
+import Network.URI (URI (..), URIAuth (..), nullURI)
+
+-- text
+import qualified Data.Text.Lazy as Text
+
+-- wai-app-static
+import Network.Wai.Application.Static
+
+-- warp
+import Network.Wai.Handler.Warp
 
 main :: IO ()
 main =

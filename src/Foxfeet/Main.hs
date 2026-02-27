@@ -6,16 +6,27 @@ module Foxfeet.Main
   , PreviewOptions (..)
   ) where
 
+-- base
 import Control.Applicative ((<**>))
 import Data.Foldable (fold, traverse_)
-import qualified Data.Text.Lazy.IO as Text.Lazy.IO
 import Data.Version (showVersion)
+
+-- foxfeet
 import Foxfeet.Feed
+import Paths_foxfeet (version)
+
+-- http-client-tls
 import Network.HTTP.Client.TLS (newTlsManager)
+
+-- network-uri
 import Network.URI (URI, parseURI)
+
+-- optparse-applicative
 import Options.Applicative (execParser)
 import qualified Options.Applicative as Options
-import Paths_foxfeet (version)
+
+-- text
+import qualified Data.Text.Lazy.IO as Text.Lazy.IO
 
 main :: IO ()
 main = do
