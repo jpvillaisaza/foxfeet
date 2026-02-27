@@ -13,8 +13,7 @@ library
   exposed-modules:
     Foxfeet
     Foxfeet.Feed
-    Foxfeet.Http
-    Foxfeet.Opt
+    Foxfeet.Main
   other-modules:
     Paths_foxfeet
   autogen-modules:
@@ -48,14 +47,15 @@ test-suite foxfeet-test
   import: common
   hs-source-dirs: test
   main-is: Main.hs
-  other-modules:
-    Foxfeet.FeedSpec
   build-depends:
     , base
     , foxfeet
     , hspec >= 2.11.16 && < 2.12
+    , http-client-tls
     , network-uri
     , text
+    , wai-app-static
+    , warp
   ghc-options:
     -threaded
     -rtsopts

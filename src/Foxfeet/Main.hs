@@ -1,17 +1,33 @@
-module Foxfeet.Opt
-  ( Options (..)
-  , optionsParserInfo
+module Foxfeet.Main
+  ( main
+  , Options (..)
   , Command (..)
   , DiscoverOptions (..)
   , PreviewOptions (..)
   ) where
 
 import Control.Applicative ((<**>))
-import Data.Foldable (fold)
+import Data.Foldable (fold, traverse_)
+import qualified Data.Text.Lazy.IO as Text.Lazy.IO
 import Data.Version (showVersion)
+import Foxfeet.Feed
+import Network.HTTP.Client.TLS (newTlsManager)
 import Network.URI (URI, parseURI)
+import Options.Applicative (execParser)
 import qualified Options.Applicative as Options
 import Paths_foxfeet (version)
+
+main :: IO ()
+main = do
+  options <- execParser optionsParserInfo
+  manager <- newTlsManager
+  case optionsCommand options of
+    Discover (DiscoverOptions check guess url) -> do
+      feeds <- discoverFeeds manager url check guess
+      traverse_ (Text.Lazy.IO.putStr . renderFeed) feeds
+    Preview (PreviewOptions url) -> do
+      items <- previewFeed manager url
+      traverse_ (Text.Lazy.IO.putStr . renderItem) items
 
 newtype Options = Options
   { optionsCommand :: Command

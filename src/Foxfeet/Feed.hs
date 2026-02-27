@@ -4,6 +4,7 @@ import Control.Applicative
 import Control.Monad (filterM)
 import Data.Aeson
 import qualified Data.Aeson.KeyMap as KeyMap
+import qualified Data.ByteString.Char8 as ByteString
 import Data.ByteString.Lazy (ByteString)
 import Data.List (find)
 import Data.Maybe (catMaybes, mapMaybe)
@@ -12,9 +13,11 @@ import Data.Text.Lazy (Text, fromStrict, pack, unpack)
 import qualified Data.Text.Lazy as Text.Lazy
 import Data.Text.Lazy.Encoding (decodeUtf8)
 import Data.Vector (toList)
-import Foxfeet.Http (addUserAgent)
+import Data.Version (showVersion)
 import Network.HTTP.Client
+import Network.HTTP.Types (hUserAgent)
 import Network.URI
+import Paths_foxfeet (version)
 import Text.HTML.TagSoup
 
 data Feed = Feed
@@ -249,3 +252,10 @@ renderItem item =
       Text.Lazy.unlines
         [ pack "- url: " <> itemUrl item
         ]
+
+addUserAgent :: Request -> Request
+addUserAgent request =
+  let
+    t = (hUserAgent, ByteString.pack ("foxfeet/" <> showVersion version))
+  in
+    request { requestHeaders = t : requestHeaders request }
