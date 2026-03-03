@@ -1,0 +1,19 @@
+<rss>
+  <channel>
+    <item>
+      <title>Item 1</title>
+      <link>http://localhost:8000/item1</link>
+      <pubDate></pubDate>
+    </item>
+    <item>
+      <title>Item 2</title>
+      <link>http://localhost:8000/item2</link>
+      <pubDate></pubDate>
+    </item>
+    <item>
+      <title>Item 3</title>
+      <link>http://localhost:8000/item3</link>
+      <pubDate></pubDate>
+    </item>
+  </channel>
+</rss>

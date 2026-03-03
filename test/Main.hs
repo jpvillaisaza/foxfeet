@@ -6,6 +6,7 @@ import Control.Exception (bracket)
 
 -- foxfeet
 import Foxfeet.Feed
+import Paths_foxfeet
 
 -- hspec
 import Test.Hspec (Spec, describe, hspec, it, shouldBe)
@@ -32,16 +33,39 @@ main =
 
 spec :: Spec
 spec = do
-  Hspec.aroundAll withStaticServer $
+  Hspec.aroundAll withStaticServer $ do
     describe "discoverFeeds" $ do
-      it "" $ \url -> do
+      it "no feeds" $ \baseUrl -> do
         manager <- newTlsManager
+        let url = baseUrl { uriPath = "/pages/no-feeds" }
         feeds <- discoverFeeds manager url False False
         feeds `shouldBe` mempty
-      it "" $ \url -> do
+      it "accepts several" $ \baseUrl -> do
         manager <- newTlsManager
+        let url = baseUrl { uriPath = "/pages"}
         feeds <- discoverFeeds manager url False False
-        feeds `shouldBe` mempty
+        length feeds `shouldBe` 3
+    describe "previewFeed" $ do
+      it "" $ \baseUrl -> do
+        manager <- newTlsManager
+        let url = baseUrl { uriPath = "/" }
+        items <- previewFeed manager url
+        items `shouldBe` mempty
+      it "Atom" $ \baseUrl -> do
+        manager <- newTlsManager
+        let url = baseUrl { uriPath = "/feeds/atom.xml" }
+        items <- previewFeed manager url
+        length items `shouldBe` 3
+      it "JSON" $ \baseUrl -> do
+        manager <- newTlsManager
+        let url = baseUrl { uriPath = "/feeds/feed.json" }
+        items <- previewFeed manager url
+        length items `shouldBe` 3
+      it "RSS" $ \baseUrl -> do
+        manager <- newTlsManager
+        let url = baseUrl { uriPath = "/feeds/rss.xml" }
+        items <- previewFeed manager url
+        length items `shouldBe` 3
   describe "parseFeeds" $ do
     it "no feeds" $ do
       let
@@ -154,9 +178,8 @@ withStaticServer :: (URI -> IO ()) -> IO ()
 withStaticServer f =
   bracket start killThread (const (f url))
   where
-    start =
-      forkIO $
-        run 8000
-          (staticApp (defaultFileServerSettings "static"))
+    start = do
+      settings <- fmap defaultFileServerSettings (getDataFileName "test/data")
+      forkIO (run 8000 (staticApp settings))
     url =
       URI "http:" (Just (URIAuth "" "localhost" ":8000")) "" "" ""

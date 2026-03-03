@@ -3,6 +3,9 @@ cabal-version: 3.8
 name: foxfeet
 version: 0.1.0.0
 
+data-files:
+  test/data/**/*.html
+
 common common
   default-language: Haskell2010
   ghc-options: -Wall
@@ -47,6 +50,8 @@ test-suite foxfeet-test
   import: common
   hs-source-dirs: test
   main-is: Main.hs
+  other-modules:
+    Paths_foxfeet
   build-depends:
     , base
     , foxfeet
