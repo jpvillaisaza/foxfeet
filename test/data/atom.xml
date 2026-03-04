@@ -1,0 +1,14 @@
+<feed>
+  <entry>
+    <title>Item 1</title>
+    <link href="http://localhost:8000/item1"/>
+  </entry>
+  <entry>
+    <title>Item 2</title>
+    <link href="http://localhost:8000/item2"/>
+  </entry>
+  <entry>
+    <title>Item 3</title>
+    <link href="http://localhost:8000/item3"/>
+  </entry>
+</feed>
