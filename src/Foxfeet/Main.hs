@@ -7,7 +7,7 @@ module Foxfeet.Main
   ) where
 
 -- base
-import Control.Applicative ((<**>))
+import Control.Applicative ((<**>), optional)
 import Data.Foldable (fold)
 import Data.Version (showVersion)
 
@@ -36,8 +36,8 @@ main = do
     Discover (DiscoverOptions check guess json url) -> do
       feeds <- discoverFeeds manager url check guess
       Text.Lazy.IO.putStrLn (renderFeeds json feeds)
-    Preview (PreviewOptions json url) -> do
-      items <- previewFeed manager url
+    Preview (PreviewOptions json mLimit url) -> do
+      items <- fmap (maybe id take mLimit) (previewFeed manager url)
       Text.Lazy.IO.putStrLn (renderItems json items)
 
 newtype Options = Options
@@ -145,6 +145,7 @@ mkUrlParser mv h =
 
 data PreviewOptions = PreviewOptions
   { previewOptionsJson :: Bool
+  , previewOptionsLimit :: Maybe Int
   , previewOptionsUrl :: URI
   }
 
@@ -152,4 +153,15 @@ previewOptionsParser :: Options.Parser PreviewOptions
 previewOptionsParser =
   PreviewOptions
     <$> jsonParser
+    <*> optional limitParser
     <*> mkUrlParser "FEED_URL" "Feed URL to preview"
+
+limitParser :: Options.Parser Int
+limitParser =
+  let
+    mods =
+      [ Options.long "limit"
+      , Options.help "Limit"
+      ]
+  in
+    Options.option Options.auto (fold mods)
