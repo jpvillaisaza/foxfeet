@@ -3,6 +3,7 @@ module Foxfeet.Feed where
 -- aeson
 import Data.Aeson
 import qualified Data.Aeson.KeyMap as KeyMap
+import Data.Aeson.Text (encodeToLazyText)
 
 -- base
 import Control.Applicative
@@ -47,18 +48,39 @@ data Feed = Feed
   }
   deriving (Eq, Show)
 
+instance ToJSON Feed where
+  toJSON feed =
+    object
+      [ fromString "format" .= feedFormat feed
+      , fromString "title" .= feedTitle feed
+      , fromString "url" .= feedUrl feed
+      ]
+
 renderFeed :: Feed -> Text
 renderFeed feed =
-  Text.Lazy.unlines
+  Text.Lazy.concat
     [ pack "- url: " <> feedUrl feed
+    , pack "\n"
     , pack "  type: " <> prettyFormat (feedFormat feed)
     ]
+
+renderFeeds :: Bool -> [Feed] -> Text
+renderFeeds json feeds =
+  case json of
+    False ->
+      Text.Lazy.intercalate (pack "\n") (fmap renderFeed feeds)
+    True ->
+      encodeToLazyText feeds
 
 data Format
   = Atom
   | Json
   | Rss
   deriving (Eq, Show)
+
+instance ToJSON Format where
+  toJSON =
+    prettyFormat
 
 parseFormat :: Text -> Maybe Format
 parseFormat =
@@ -179,6 +201,14 @@ data Item =
     }
   deriving (Eq, Show)
 
+instance ToJSON Item where
+  toJSON item =
+    object
+      [ fromString "title" .= itemTitle item
+      , fromString "url" .= itemUrl item
+      , fromString "date" .= itemPubDate item
+      ]
+
 previewFeed :: Manager -> URI -> IO [Item]
 previewFeed manager url = do
   request <- parseRequest (show url)
@@ -271,6 +301,14 @@ renderItem item =
       Text.Lazy.unlines
         [ pack "- url: " <> itemUrl item
         ]
+
+renderItems :: Bool -> [Item] -> Text
+renderItems json items =
+  case json of
+    False ->
+      Text.Lazy.intercalate (pack "\n") (fmap renderItem items)
+    True ->
+      encodeToLazyText items
 
 addUserAgent :: Request -> Request
 addUserAgent request =

@@ -7,8 +7,8 @@ module Foxfeet.Main
   ) where
 
 -- base
-import Control.Applicative ((<**>))
-import Data.Foldable (fold, traverse_)
+import Control.Applicative ((<**>), optional)
+import Data.Foldable (fold)
 import Data.Version (showVersion)
 
 -- foxfeet
@@ -33,12 +33,12 @@ main = do
   options <- execParser optionsParserInfo
   manager <- newTlsManager
   case optionsCommand options of
-    Discover (DiscoverOptions check guess url) -> do
+    Discover (DiscoverOptions check guess json url) -> do
       feeds <- discoverFeeds manager url check guess
-      traverse_ (Text.Lazy.IO.putStr . renderFeed) feeds
-    Preview (PreviewOptions url) -> do
-      items <- previewFeed manager url
-      traverse_ (Text.Lazy.IO.putStr . renderItem) items
+      Text.Lazy.IO.putStrLn (renderFeeds json feeds)
+    Preview (PreviewOptions json mLimit url) -> do
+      items <- fmap (maybe id take mLimit) (previewFeed manager url)
+      Text.Lazy.IO.putStrLn (renderItems json items)
 
 newtype Options = Options
   { optionsCommand :: Command
@@ -91,6 +91,7 @@ commandParser =
 data DiscoverOptions = DiscoverOptions
   { discoverOptionsCheck :: Bool
   , discoverOptionsGuess :: Bool
+  , discoverOptionsJson :: Bool
   , discoverOptionsUrl :: URI
   }
 
@@ -99,6 +100,7 @@ discoverOptionsParser =
   DiscoverOptions
     <$> checkParser
     <*> guessParser
+    <*> jsonParser
     <*> mkUrlParser "URL" "URL to discover feeds"
 
 checkParser :: Options.Parser Bool
@@ -121,6 +123,16 @@ guessParser =
   in
     Options.switch (fold mods)
 
+jsonParser :: Options.Parser Bool
+jsonParser =
+  let
+    mods =
+      [ Options.long "json"
+      , Options.help "JSON output"
+      ]
+  in
+    Options.switch (fold mods)
+
 mkUrlParser :: String -> String -> Options.Parser URI
 mkUrlParser mv h =
   let
@@ -131,11 +143,25 @@ mkUrlParser mv h =
   in
     Options.argument (Options.maybeReader parseURI) (fold mods)
 
-newtype PreviewOptions = PreviewOptions
-  { previewOptionsUrl :: URI
+data PreviewOptions = PreviewOptions
+  { previewOptionsJson :: Bool
+  , previewOptionsLimit :: Maybe Int
+  , previewOptionsUrl :: URI
   }
 
 previewOptionsParser :: Options.Parser PreviewOptions
 previewOptionsParser =
   PreviewOptions
-    <$> mkUrlParser "FEED_URL" "Feed URL to preview"
+    <$> jsonParser
+    <*> optional limitParser
+    <*> mkUrlParser "FEED_URL" "Feed URL to preview"
+
+limitParser :: Options.Parser Int
+limitParser =
+  let
+    mods =
+      [ Options.long "limit"
+      , Options.help "Limit"
+      ]
+  in
+    Options.option Options.auto (fold mods)
